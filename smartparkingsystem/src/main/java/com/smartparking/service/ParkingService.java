@@ -16,7 +16,7 @@ public class ParkingService {
         public int espacioId;
         public String numero;
         public boolean disponible;
-        public Integer transaccionIdActiva; // puede ser null
+        public Integer transaccionIdActiva; 
 
         public EspacioDTO(int espacioId, String numero, boolean disponible, Integer transaccionIdActiva) {
             this.espacioId = espacioId;
@@ -78,13 +78,11 @@ public class ParkingService {
         }
     }
 
-    // -------------------------------------------------
     // Helpers internos
-    // -------------------------------------------------
 
-    /**
-     * Busca el vehículo por placa. Si no existe, lo crea y devuelve su ID.
-     */
+
+    // Busca el vehículo por placa. Si no existe, lo crea y devuelve su ID.
+
     private int obtenerOVerificarVehiculo(Connection conn, String placa, String tipoVehiculo)
             throws SQLException {
 
@@ -116,10 +114,9 @@ public class ParkingService {
         }
     }
 
-    /**
-     * Asigna automáticamente el primer espacio disponible de un parqueadero.
-     * (Útil si quieres un flujo automático además del mapa).
-     */
+   
+    // Asigna automáticamente el primer espacio disponible de un parqueadero.
+
     private int asignarEspacioDisponible(Connection conn, int parqueaderoId) throws SQLException {
         String sql = "SELECT espacio_id " +
                      "FROM Espacios " +
@@ -138,13 +135,8 @@ public class ParkingService {
         }
     }
 
-    // -------------------------------------------------
-    // Listado de espacios para el "mapa"
-    // -------------------------------------------------
+    // Listado de espacios para el mapa
 
-    /**
-     * Lista los espacios de un parqueadero para mostrar en el mapa (UI).
-     */
     public List<EspacioDTO> listarEspaciosPorParqueadero(int parqueaderoId) throws SQLException {
         String sql = "SELECT e.espacio_id, e.numero_espacio, e.disponible, tr.transaccion_id " +
                     "FROM Espacios e " +
@@ -181,13 +173,9 @@ public class ParkingService {
         return lista;
     }
 
-    // -------------------------------------------------
-    // Registro de entrada
-    // -------------------------------------------------
 
-    /**
-     * Entrada automática: el sistema elige un espacio disponible del parqueadero.
-     */
+    // Registro de entrada
+
     public int registrarEntradaAuto(String placa, String tipoVehiculo, int parqueaderoId) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -235,9 +223,9 @@ public class ParkingService {
         return registrarEntradaAuto(placa, tipoVehiculo, parqueaderoId);
     }
 
-    /**
-     * Entrada manual: el usuario elige el espacio (por mapa) y se registra ahí.
-     */
+
+    // Entrada manual: el usuario elige el espacio (por mapa) y se registra ahí.
+
     public int registrarEntradaEnEspacio(String placa, String tipoVehiculo, int espacioId) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -276,10 +264,8 @@ public class ParkingService {
         }
     }
 
-    // -------------------------------------------------
-    // Registro de salida + pagos
-    // -------------------------------------------------
 
+    // Registro de salida + pagos
     /**
      * Registra la salida de un vehículo, cierra la transacción y crea el pago
      * con el método indicado. Devuelve la tarifa calculada.
@@ -302,7 +288,7 @@ public class ParkingService {
             try {
                 Double tarifa = null;
 
-                // 1) Cerrar la transacción y obtener tarifa_calculada (el trigger la calcula)
+                // Cerrar la transacción y obtener tarifa_calculada (el trigger la calcula)
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                     ps.setInt(1, transaccionId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -320,7 +306,7 @@ public class ParkingService {
                     throw new SQLException("No se pudo obtener la tarifa_calculada para la transacción " + transaccionId);
                 }
 
-                // 2) Insertar el pago con el método indicado
+                // Insertar el pago con el método indicado
                 try (PreparedStatement ps = conn.prepareStatement(insertPagoSql)) {
                     ps.setInt(1, transaccionId);
                     ps.setDouble(2, tarifa);
@@ -340,9 +326,7 @@ public class ParkingService {
         }
     }
 
-    /**
-     * Consulta la tarifa_calculada de una transacción (por si quieres mostrarla aparte).
-     */
+    // Obtener tarifa calculada para una transacción (si ya se cerró)
     public Double obtenerTarifa(int transaccionId) throws SQLException {
         String sql = "SELECT tarifa_calculada FROM Transacciones WHERE transaccion_id = ?";
 
@@ -363,9 +347,8 @@ public class ParkingService {
         }
     }
 
-    // ===============================
+
     // REPORTES
-    // ===============================
 
     // Ocupación actual por parqueadero
     public java.util.List<OcupacionDTO> obtenerOcupacionActual() throws SQLException {

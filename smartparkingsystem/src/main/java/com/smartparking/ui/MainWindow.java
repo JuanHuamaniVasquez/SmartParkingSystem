@@ -76,9 +76,7 @@ public class MainWindow extends JFrame {
         setLayout(new BorderLayout(10, 10));
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // =======================
         // Panel de entrada
-        // =======================
         JButton btnCargarMapa = new JButton("Cargar mapa");
         btnCargarMapa.addActionListener(this::onCargarMapa);
 
@@ -115,9 +113,8 @@ public class MainWindow extends JFrame {
         panelEntrada.add(btnRegistrarEntrada);
         panelEntrada.add(new JLabel(""));
 
-        // =======================
+
         // Panel de salida/pago
-        // =======================
         JButton btnRegistrarSalida = new JButton("Registrar salida");
         btnRegistrarSalida.addActionListener(this::onRegistrarSalida);
 
@@ -133,33 +130,25 @@ public class MainWindow extends JFrame {
         panelSalida.add(new JLabel(""));
         panelSalida.add(btnRegistrarSalida);
 
-        // =======================
         // Centro: mapa + salida
-        // =======================
         JPanel panelCentro = new JPanel(new BorderLayout(10, 10));
         panelCentro.add(panelMapa, BorderLayout.CENTER);
         panelCentro.add(panelSalida, BorderLayout.SOUTH);
 
-        // =======================
-        // Panel de log colapsable
-        // =======================
+        // Panel de log 
         JPanel panelLog = new JPanel(new BorderLayout(5, 5));
         panelLog.setBorder(BorderFactory.createTitledBorder("Log"));
         panelLog.add(chkMostrarLog, BorderLayout.NORTH);
         panelLog.add(scrollLog, BorderLayout.CENTER);
 
-        // =======================
         // Añadir todo al frame
-        // =======================
         add(panelEntrada, BorderLayout.NORTH);
         add(panelCentro, BorderLayout.CENTER);
         add(panelLog, BorderLayout.SOUTH);
     }
 
-    // ==============================
-    // Handlers
-    // ==============================
 
+    // Handlers
     private void onCargarMapa(ActionEvent e) {
         String parqueaderoStr = txtParqueaderoId.getText().trim();
         if (parqueaderoStr.isEmpty()) {
@@ -289,10 +278,8 @@ public class MainWindow extends JFrame {
         }
     }
 
-    // ==============================
-    // Utilidad
-    // ==============================
 
+    // Utilidad
     private void toggleLogVisibility() {
         boolean visible = chkMostrarLog.isSelected();
         scrollLog.setVisible(visible);

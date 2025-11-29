@@ -124,10 +124,7 @@ public class ReportsWindow extends JFrame {
         add(tabs, BorderLayout.CENTER);
     }
 
-    // =====================================
     // Carga de datos para cada reporte
-    // =====================================
-
     private void cargarOcupacion() {
         try {
             List<OcupacionDTO> lista = parkingService.obtenerOcupacionActual();
