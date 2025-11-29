@@ -1,6 +1,6 @@
 # SmartParkingSystem
 
-Proyecto para el curso de Bases de Datos, donde se implementa un sistema de gestión de parqueaderos con tarifas dinámicas, control de espacios y reportes básicos.
+Proyecto realizado por **Juan Huamaní Vásquez** para el curso de Bases de Datos, donde se implementa un sistema de gestión de parqueaderos con tarifas dinámicas, control de espacios y reportes básicos.
 
 La aplicación está hecha en **Java + Swing** y se conecta a **PostgreSQL** usando JDBC.
 
