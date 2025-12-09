@@ -271,60 +271,56 @@ public class ParkingService {
      * con el método indicado. Devuelve la tarifa calculada.
      */
     public Double registrarSalida(int transaccionId, String metodoPago) throws SQLException {
-        String updateSql =
-                "UPDATE Transacciones " +
-                "SET estado = 'CERRADA', " +
-                "    hora_salida = CURRENT_TIMESTAMP " +
-                "WHERE transaccion_id = ? " +
-                "RETURNING tarifa_calculada";
+    String sqlUpdate = """
+        UPDATE Transacciones
+        SET estado = 'CERRADA',
+            hora_salida = NOW()
+        WHERE transaccion_id = ?
+          AND estado = 'ABIERTA'
+        RETURNING tarifa_calculada
+        """;
 
-        String insertPagoSql =
-                "INSERT INTO Pagos (transaccion_id, monto, metodo_pago, fecha_pago) " +
-                "VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+    String sqlPago = """
+        INSERT INTO Pagos (transaccion_id, monto, metodo_pago, fecha_pago)
+        VALUES (?, ?, ?, NOW())
+        """;
 
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            conn.setAutoCommit(false);
+    try (Connection conn = DatabaseConnection.getConnection()) {
+        conn.setAutoCommit(false);
 
-            try {
-                Double tarifa = null;
+        Double tarifa;
 
-                // Cerrar la transacción y obtener tarifa_calculada (el trigger la calcula)
-                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                    ps.setInt(1, transaccionId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            if (rs.getObject("tarifa_calculada") != null) {
-                                tarifa = rs.getDouble("tarifa_calculada");
-                            }
-                        } else {
-                            throw new SQLException("No se encontró transacción con id = " + transaccionId);
-                        }
-                    }
+        // Intentar cerrar solo si está ABIERTA
+        try (PreparedStatement ps = conn.prepareStatement(sqlUpdate)) {
+            ps.setInt(1, transaccionId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    conn.rollback();
+                    throw new SQLException(
+                        "La transacción " + transaccionId + " no existe o ya está CERRADA."
+                    );
                 }
-
-                if (tarifa == null) {
-                    throw new SQLException("No se pudo obtener la tarifa_calculada para la transacción " + transaccionId);
-                }
-
-                // Insertar el pago con el método indicado
-                try (PreparedStatement ps = conn.prepareStatement(insertPagoSql)) {
-                    ps.setInt(1, transaccionId);
-                    ps.setDouble(2, tarifa);
-                    ps.setString(3, metodoPago);
-                    ps.executeUpdate();
-                }
-
-                conn.commit();
-                return tarifa;
-
-            } catch (SQLException e) {
-                conn.rollback();
-                throw e;
-            } finally {
-                conn.setAutoCommit(true);
+                tarifa = rs.getDouble("tarifa_calculada");
             }
         }
+
+        // Registrar pago solo si realmente se cerró
+        try (PreparedStatement psPago = conn.prepareStatement(sqlPago)) {
+            psPago.setInt(1, transaccionId);
+            psPago.setDouble(2, tarifa);
+            psPago.setString(3, metodoPago);
+            psPago.executeUpdate();
+        }
+
+        conn.commit();
+        return tarifa;
+
+    } catch (SQLException e) {
+        throw e;
     }
+}
+
 
     // Obtener tarifa calculada para una transacción (si ya se cerró)
     public Double obtenerTarifa(int transaccionId) throws SQLException {
