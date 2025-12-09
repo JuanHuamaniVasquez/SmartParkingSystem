@@ -271,55 +271,55 @@ public class ParkingService {
      * con el método indicado. Devuelve la tarifa calculada.
      */
     public Double registrarSalida(int transaccionId, String metodoPago) throws SQLException {
-    String sqlUpdate = """
-        UPDATE Transacciones
-        SET estado = 'CERRADA',
-            hora_salida = NOW()
-        WHERE transaccion_id = ?
-          AND estado = 'ABIERTA'
-        RETURNING tarifa_calculada
-        """;
+        String sqlUpdate = """
+            UPDATE Transacciones
+            SET estado = 'CERRADA',
+                hora_salida = NOW()
+            WHERE transaccion_id = ?
+            AND estado = 'ABIERTA'
+            RETURNING tarifa_calculada
+            """;
 
-    String sqlPago = """
-        INSERT INTO Pagos (transaccion_id, monto, metodo_pago, fecha_pago)
-        VALUES (?, ?, ?, NOW())
-        """;
+        String sqlPago = """
+            INSERT INTO Pagos (transaccion_id, monto, metodo_pago, fecha_pago)
+            VALUES (?, ?, ?, NOW())
+            """;
 
-    try (Connection conn = DatabaseConnection.getConnection()) {
-        conn.setAutoCommit(false);
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
 
-        Double tarifa;
+            Double tarifa;
 
-        // Intentar cerrar solo si está ABIERTA
-        try (PreparedStatement ps = conn.prepareStatement(sqlUpdate)) {
-            ps.setInt(1, transaccionId);
+            // Intentar cerrar solo si está ABIERTA
+            try (PreparedStatement ps = conn.prepareStatement(sqlUpdate)) {
+                ps.setInt(1, transaccionId);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    conn.rollback();
-                    throw new SQLException(
-                        "La transacción " + transaccionId + " no existe o ya está CERRADA."
-                    );
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        throw new SQLException(
+                            "La transacción " + transaccionId + " no existe o ya está CERRADA."
+                        );
+                    }
+                    tarifa = rs.getDouble("tarifa_calculada");
                 }
-                tarifa = rs.getDouble("tarifa_calculada");
             }
+
+            // Registrar pago solo si realmente se cerró
+            try (PreparedStatement psPago = conn.prepareStatement(sqlPago)) {
+                psPago.setInt(1, transaccionId);
+                psPago.setDouble(2, tarifa);
+                psPago.setString(3, metodoPago);
+                psPago.executeUpdate();
+            }
+
+            conn.commit();
+            return tarifa;
+
+        } catch (SQLException e) {
+            throw e;
         }
-
-        // Registrar pago solo si realmente se cerró
-        try (PreparedStatement psPago = conn.prepareStatement(sqlPago)) {
-            psPago.setInt(1, transaccionId);
-            psPago.setDouble(2, tarifa);
-            psPago.setString(3, metodoPago);
-            psPago.executeUpdate();
-        }
-
-        conn.commit();
-        return tarifa;
-
-    } catch (SQLException e) {
-        throw e;
     }
-}
 
 
     // Obtener tarifa calculada para una transacción (si ya se cerró)
